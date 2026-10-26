@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#050b18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Cortana</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23bff3ff'/%3E%3Cstop offset='.5' stop-color='%233fd0ff'/%3E%3Cstop offset='1' stop-color='%23123a8a'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%23050b18'/%3E%3Ccircle cx='32' cy='32' r='18' fill='url(%23g)'/%3E%3C/svg%3E">
+<style>
+:root{
+  --arka:#050b18; --panel:#0b1428; --kutu:#111d38; --kenar:#1d2c50;
+  --yazi:#e8eef9; --soluk:#8394b3; --vurgu:#3fd0ff; --vurgu2:#7b6cff;
+  --sen:#1d4fd8; --hata:#ff8f8f; --iyi:#46d38a; --sari:#f2c14e;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--arka);color:var(--yazi);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px}
+body{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--yazi)}
+
+/* Üst şerit */
+header{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  background:linear-gradient(180deg,#0a1530,#07102200);flex-shrink:0}
+.mini-kure{width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:radial-gradient(circle at 40% 35%,#d9f8ff,#3fd0ff 45%,#173f9c 80%);
+  box-shadow:0 0 18px #3fd0ff88}
+.mini-kure.calisiyor{animation:nabiz 1s ease-in-out infinite}
+.baslik{flex:1;min-width:0}
+.baslik b{display:block;letter-spacing:.18em;font-size:15px}
+.baslik span{font-size:12px;color:var(--soluk)}
+.cip{background:var(--kutu);border:1px solid var(--kenar);border-radius:999px;padding:7px 12px;font-size:13px;
+  max-width:42vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ikon-btn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--kutu);
+  border:1px solid var(--kenar);flex-shrink:0}
+.ikon-btn svg{width:20px;height:20px}
+
+/* Sohbet */
+main{flex:1;overflow-y:auto;padding:8px 14px 16px;scroll-behavior:smooth}
+.bos{margin:16vh auto 0;text-align:center;color:var(--soluk);max-width:300px;line-height:1.5}
+.bos .buyuk-kure{width:96px;height:96px;margin:0 auto 18px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#e6fbff,#3fd0ff 45%,#173f9c 80%);
+  box-shadow:0 0 40px #3fd0ff77;animation:nefes 4s ease-in-out infinite}
+.mesaj{display:flex;margin:10px 0}
+.mesaj.sen{justify-content:flex-end}
+.balon{max-width:86%;padding:10px 14px;border-radius:18px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
+.sen .balon{background:var(--sen);border-bottom-right-radius:6px}
+.cortana .balon{background:var(--kutu);border:1px solid var(--kenar);border-bottom-left-radius:6px}
+.balon .meta{display:block;margin-top:6px;font-size:11.5px;color:var(--soluk);white-space:normal}
+.balon .not{display:block;font-size:12px;color:var(--hata);margin-bottom:4px;white-space:normal}
+.balon .bilgi{display:block;font-size:12px;color:var(--soluk);margin-bottom:4px;white-space:normal}
+.yaziyor::after{content:"";display:inline-block;width:8px;height:8px;margin-left:4px;border-radius:50%;
+  background:var(--vurgu);animation:nabiz .9s infinite}
+
+/* Alt çubuk */
+footer{flex-shrink:0;padding:8px 10px calc(10px + env(safe-area-inset-bottom));background:var(--panel);
+  border-top:1px solid var(--kenar)}
+.secenekler{display:flex;gap:8px;margin:0 2px 8px;overflow-x:auto}
+.anahtar-cip{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 11px;border-radius:999px;
+  background:var(--kutu);border:1px solid var(--kenar);white-space:nowrap;color:var(--soluk)}
+.anahtar-cip.acik{color:var(--yazi);border-color:var(--vurgu);background:#0f2a4a}
+.satir{display:flex;gap:8px;align-items:flex-end}
+textarea#giris{flex:1;resize:none;max-height:120px;min-height:46px;padding:12px 14px;border-radius:22px;
+  background:var(--kutu);border:1px solid var(--kenar);outline:none;line-height:1.35}
+textarea#giris:focus{border-color:var(--vurgu)}
+.yuvarlak{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.yuvarlak svg{width:22px;height:22px}
+#gonderBtn{background:var(--vurgu);color:#04121f}
+#gonderBtn:disabled{opacity:.4}
+#mikBtn{background:var(--kutu);border:1px solid var(--kenar)}
+#mikBtn.dinliyor{background:#c94b4b;border-color:#c94b4b}
+#sesliBtn{background:linear-gradient(135deg,var(--vurgu),var(--vurgu2));color:#04121f}
+
+/* Sesli sohbet ekranı */
+#sesli{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,#0c2350,#050b18 70%);
+  display:none;flex-direction:column;align-items:center;justify-content:space-between;z-index:20;
+  padding:calc(24px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom))}
+#sesli.acik{display:flex}
+#sesli .ust-yazi{color:var(--soluk);font-size:14px;letter-spacing:.15em}
+.kure{width:min(62vw,260px);aspect-ratio:1;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 40% 35%,#effcff,#3fd0ff 42%,#1a4bb5 72%,#0b2266);
+  box-shadow:0 0 60px #3fd0ff66,0 0 140px #3fd0ff33;transition:transform .3s}
+.kure.bekliyor{animation:nefes 4s ease-in-out infinite}
+.kure.dinliyor{animation:dinle 1.2s ease-in-out infinite}
+.kure.dusunuyor{animation:don 1.6s linear infinite;filter:hue-rotate(40deg)}
+.kure.konusuyor{animation:konus .5s ease-in-out infinite alternate}
+#sesliDurum{font-size:20px;margin-top:22px;text-align:center}
+#sesliMetin{color:var(--soluk);min-height:3em;max-width:520px;text-align:center;line-height:1.45;
+  margin-top:10px;font-size:15px}
+.sesli-alt{display:flex;gap:18px;align-items:center}
+.sesli-alt button{padding:14px 22px;border-radius:999px;background:var(--kutu);border:1px solid var(--kenar)}
+.sesli-alt .bitir{background:#c94b4b;border-color:#c94b4b}
+
+/* Ayarlar */
+#ayarlar{position:fixed;inset:0;background:#000a;display:none;z-index:30;align-items:flex-end}
+#ayarlar.acik{display:flex}
+.sayfa{background:var(--panel);width:100%;max-height:92dvh;overflow-y:auto;border-radius:22px 22px 0 0;
+  padding:18px 16px calc(24px + env(safe-area-inset-bottom));border-top:1px solid var(--kenar)}
+.sayfa h2{margin:0 0 4px;font-size:19px}
+.sayfa h3{margin:22px 0 8px;font-size:14px;color:var(--vurgu);letter-spacing:.06em;text-transform:uppercase}
+.sayfa p{color:var(--soluk);font-size:13.5px;line-height:1.45;margin:6px 0}
+.alan{display:flex;align-items:center;gap:8px;margin:8px 0}
+.alan label{width:96px;font-size:14px;flex-shrink:0}
+.alan input,.alan select{flex:1;min-width:0;padding:10px 12px;border-radius:12px;background:var(--kutu);
+  border:1px solid var(--kenar);outline:none}
+.alan .durum-n{width:10px;height:10px;border-radius:50%;background:var(--kenar);flex-shrink:0}
+.alan .durum-n.var{background:var(--iyi)}
+.sayfa textarea{width:100%;min-height:110px;padding:10px 12px;border-radius:12px;background:var(--kutu);
+  border:1px solid var(--kenar);outline:none;font-size:14px}
+.btn{padding:12px 16px;border-radius:12px;background:var(--kutu);border:1px solid var(--kenar);font-size:14px}
+.btn.ana{background:var(--vurgu);color:#04121f;border-color:var(--vurgu);font-weight:600}
+.btn-satir{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.kucuk{font-size:12.5px;color:var(--soluk)}
+#bildirim{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#1d2c50;padding:10px 16px;
+  border-radius:12px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:40;max-width:90vw}
+#bildirim.goster{opacity:1}
+
+@keyframes nefes{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes dinle{0%,100%{transform:scale(1);box-shadow:0 0 60px #3fd0ff66}50%{transform:scale(1.1);box-shadow:0 0 110px #3fd0ffaa}}
+@keyframes don{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes konus{from{transform:scale(.97)}to{transform:scale(1.08)}}
+@keyframes nabiz{0%,100%{opacity:.35}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mini-kure" id="miniKure"></div>
+  <div class="baslik"><b>CORTANA</b><span id="durumYazi">Hazır</span></div>
+  <button class="cip" id="beyinCip" title="Beyin seç">Otomatik</button>
+  <button class="ikon-btn" id="ayarBtn" aria-label="Ayarlar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main id="sohbet"></main>
+
+<footer>
+  <div class="secenekler">
+    <button class="anahtar-cip" id="internetCip">🌐 İnternette ara</button>
+    <button class="anahtar-cip" id="sesCip">🔊 Sesli cevap</button>
+    <button class="anahtar-cip" id="yeniCip">＋ Yeni sohbet</button>
+  </div>
+  <div class="satir">
+    <textarea id="giris" rows="1" placeholder="Cortana'ya yaz..." enterkeyhint="send"></textarea>
+    <button class="yuvarlak" id="mikBtn" aria-label="Sesle yaz">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>
+    </button>
+    <button class="yuvarlak" id="sesliBtn" aria-label="Sesli sohbet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 10v4"/></svg>
+    </button>
+    <button class="yuvarlak" id="gonderBtn" aria-label="Gönder" style="display:none">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+    </button>
+  </div>
+</footer>
+
+<!-- Sesli sohbet ekranı -->
+<div id="sesli">
+  <div class="ust-yazi">SESLİ SOHBET</div>
+  <div style="display:flex;flex-direction:column;align-items:center">
+    <div class="kure bekliyor" id="kure"></div>
+    <div id="sesliDurum">Hazırlanıyor...</div>
+    <div id="sesliMetin"></div>
+  </div>
+  <div class="sesli-alt">
+    <button id="sesliDokun">Söz kesmek için dokun</button>
+    <button class="bitir" id="sesliBitir">Bitir</button>
+  </div>
+</div>
+
+<!-- Ayarlar -->
+<div id="ayarlar">
+  <div class="sayfa">
+    <h2>Ayarlar</h2>
+    <p>Anahtarlar sadece bu telefonda, bu tarayıcıda saklanır. Hiçbir yere gönderilmez; sadece ilgili servise bağlanırken kullanılır.</p>
+
+    <h3>Beyin</h3>
+    <div class="alan"><label>Kullan</label><select id="beyinSec"></select></div>
+
+    <h3>Ses</h3>
+    <div class="alan"><label>Cortana'nın sesi</label><select id="sesSec"></select></div>
+    <div class="alan"><label>Konuşma hızı</label>
+      <select id="hizSec"><option value="0.9">Yavaş</option><option value="1">Normal</option><option value="1.1">Biraz hızlı</option><option value="1.25">Hızlı</option></select></div>
+    <div class="btn-satir"><button class="btn" id="sesDene">▶ Sesi dene</button></div>
+    <p class="kucuk">Doğal sesler Gemini anahtarıyla çalışır. Çalışmazsa Cortana otomatik olarak telefonun kendi sesini kullanır.</p>
+
+    <h3>Anahtarlar</h3>
+    <div id="anahtarAlanlari"></div>
+    <p class="kucuk">Toplu ekleme: Bilgisayardaki anahtarlar.txt içeriğini aşağıya yapıştırıp "İçe aktar"a basabilirsin.</p>
+    <textarea id="topluAnahtar" placeholder="groq = gsk_...&#10;gemini = ..."></textarea>
+    <div class="btn-satir"><button class="btn" id="iceAktar">İçe aktar</button></div>
+
+    <h3>Kişilik</h3>
+    <textarea id="kisilikAlan" style="min-height:180px"></textarea>
+    <div class="btn-satir"><button class="btn" id="kisilikSifirla">Varsayılana dön</button></div>
+
+    <div class="btn-satir" style="margin-top:22px">
+      <button class="btn ana" id="ayarKaydet">Kaydet</button>
+      <button class="btn" id="ayarKapat">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<div id="bildirim"></div>
+
+<script>
+"use strict";
+/* ================= Servisler ================= */
+const SAG = {
+  groq:{ad:"Groq",tur:"openai",url:"https://api.groq.com/openai/v1",
+    tercih:["gpt-oss-120b","llama-3.3-70b","qwen3","llama-4","gpt-oss-20b","llama"],
+    yedek:["openai/gpt-oss-120b","openai/gpt-oss-20b","qwen/qwen3-32b","llama-3.1-8b-instant"]},
+  gemini:{ad:"Gemini",tur:"gemini",url:"https://generativelanguage.googleapis.com/v1beta",
+    tercih:["flash-lite-latest","flash-latest","flash-lite","flash"],
+    yedek:["gemini-flash-lite-latest","gemini-flash-latest"]},
+  cerebras:{ad:"Cerebras",tur:"openai",url:"https://api.cerebras.ai/v1",
+    tercih:["gpt-oss-120b","llama-3.3-70b","qwen","llama"],yedek:["gpt-oss-120b","llama-3.3-70b"]},
+  openrouter:{ad:"OpenRouter",tur:"openai",url:"https://openrouter.ai/api/v1",zorunlu:":free",
+    tercih:["llama-3.3-70b","deepseek","gemini","gemma","qwen","mistral"],
+    yedek:["meta-llama/llama-3.3-70b-instruct:free"]},
+  mistral:{ad:"Mistral",tur:"openai",url:"https://api.mistral.ai/v1",
+    tercih:["mistral-small-latest","mistral-medium-latest","small"],yedek:["mistral-small-latest"]},
+  deepseek:{ad:"DeepSeek",tur:"openai",url:"https://api.deepseek.com/v1",tercih:["deepseek-chat"],yedek:["deepseek-chat"]},
+  openai:{ad:"ChatGPT",tur:"openai",url:"https://api.openai.com/v1",
+    tercih:["gpt-5-mini","gpt-4.1-mini","gpt-4o-mini","mini"],yedek:["gpt-4o-mini"]},
+  xai:{ad:"Grok",tur:"openai",url:"https://api.x.ai/v1",tercih:["grok-4-fast","fast","mini","grok"],yedek:["grok-3-mini"]},
+  anthropic:{ad:"Claude",tur:"anthropic",url:"https://api.anthropic.com/v1",tercih:["haiku","sonnet"],yedek:["claude-haiku-5-5"]},
+};
+const ONCELIK = ["groq","gemini","cerebras","openrouter","mistral","deepseek","openai","xai","anthropic"];
+const TAKMA = {chatgpt:"openai",gpt:"openai",grok:"xai",claude:"anthropic",google:"gemini"};
+const KOTU = ["whisper","tts","embed","guard","image","audio","realtime","moderation","dall","transcribe",
+  "vision","search","codex","computer","ocr","rerank","video","veo","imagen","live","thinking","native",
+  "compound","reasoner","-pro","pro-"];
+const BEKLEME_MS = 25000;
+const MAX_GECMIS = 20;
+
+/* Gemini'nin doğal sesleri. Cortana'ya hissiyat olarak yakın olanlar önde. */
+const SESLER = [
+  ["Kore","Kore · sakin, kendinden emin"],["Aoede","Aoede · hafif, akıcı"],["Leda","Leda · genç, canlı"],
+  ["Zephyr","Zephyr · parlak"],["Callirrhoe","Callirrhoe · rahat"],["Despina","Despina · yumuşak"],
+  ["Erinome","Erinome · net"],["Laomedeia","Laomedeia · neşeli"],["Achernar","Achernar · sıcak"],
+  ["Sulafat","Sulafat · sıcak, olgun"],["Vindemiatrix","Vindemiatrix · nazik"],
+  ["Charon","Charon · erkek, bilgilendirici"],["Puck","Puck · erkek, enerjik"],
+  ["telefon","Telefonun kendi sesi"],
+];
+
+const BICIM = `
+
+BİÇİM KURALLARI (her zaman geçerli)
+- Adın Cortana. Kendini her zaman Cortana olarak tanıt.
+- Doğal, akıcı ve konuşur gibi yaz; robot gibi değil, karşısındakiyle sohbet eden bir insan gibi.
+- Düz metin yaz. Markdown işaretleri (**, *, #, \`) ve tablo kullanma. Liste gerekiyorsa her maddeyi "- " ile başlat.
+- Türkçe konuş; İlahi başka bir dilde konuşursa ya da isterse o dilde cevap ver.`;
+
+const SESLI_KURAL = `
+
+ŞU AN SESLİ KONUŞUYORSUNUZ
+- Cevabın sesli okunacak. Gerçek bir sohbetteki gibi kısa ve doğal konuş: çoğunlukla 1-3 cümle.
+- Liste, numara, başlık, emoji, bağlantı kullanma. Rakamları konuşur gibi söyle.
+- Gerekirse kısa bir soruyla sohbeti devam ettir. İlahi detay isterse uzat.`;
+
+const VARSAYILAN_KISILIK = `Sen Cortana'sın: İlahi'nin kendi kurduğu kişisel yapay zekâ asistanı.
+Adını Halo serisindeki yapay zekâdan alıyorsun.
+
+KİMLİĞİN
+- "Sen kimsin?" diye sorulursa: "Ben Cortana'yım, İlahi'nin kişisel asistanıyım." de.
+- Teknik olarak nasıl çalıştığın sorulursa dürüst ol: İlahi'nin yazdığı uygulamada çalıştığını, cevapları arka planda bir bulut dil modeliyle ürettiğini söyle. Kendini başka bir şirketin ürünü gibi tanıtma.
+
+KİŞİLİĞİN
+- Ciddi ama sıcak ve samimisin. Zeki, sakin, kendinden emin; yeri gelince esprili.
+- Dürüstsün: İlahi yanılıyorsa bunu açıkça ve nedenleriyle söylersin. Haklıysa da nedenlerini gösterirsin.
+- Gereksiz övgü, yapay sıcaklık ve otomatik onay yok. Eleştirin kanıta dayalı olur, kaba olmaz.
+- Bilimsel gerçekleri, teorileri ve varsayımları birbirinden ayırırsın. Bilmediğin şeyi uydurmazsın.
+- Cevapların varsayılan olarak kısa ve net olur. İlahi detay isterse uzatırsın.
+
+İLAHİ HAKKINDA
+- Endüstriyel boru montaj ustası. Açık Öğretim'de kimya okuyor.
+- İngilizcesi A1-B1 arası; yurt dışında çalışmak ve İngilizcesini geliştirmek istiyor.
+- İlgi alanları: uzay, fizik, felsefe, Kürt tarihi ve Mezopotamya, yapay zekâ, sinema, finans.
+- Hedefleri: yapay zekâ sistemleri kuran biri olmak, sürdürülebilir yollarla ekonomik bağımsızlık, daha disiplinli olmak ve başladığı işleri bitirmek.
+
+NELERDE YARDIM EDERSİN
+- İngilizce pratiği: İstenirse İngilizce konuş, hataları nazikçe düzelt ve kısaca açıkla.
+- Yapay zekâ öğrenme, para yönetimi, fikir tartışma, kişisel gelişim.
+- Para konularında bilgi verirsin ama kesin yatırım tavsiyesi vermezsin; hızlı zengin olma vaatlerine karşı şüpheci olursun.`;
+
+/* ================= Kayıt (telefonda) ================= */
+function oku(ad, varsayilan){ try{ const v=localStorage.getItem("cortana_"+ad); return v==null?varsayilan:JSON.parse(v); }catch(e){ return varsayilan; } }
+function kaydet(ad, deger){ try{ localStorage.setItem("cortana_"+ad, JSON.stringify(deger)); }catch(e){} }
+
+const ayar = Object.assign({anahtarlar:{}, beyin:"Otomatik", ses:"Kore", hiz:"1", internet:false, sesliCevap:false,
+  kisilik:VARSAYILAN_KISILIK}, oku("ayar",{}));
+let gecmis = oku("gecmis", []);          // [{role, content, meta?}]
+const kapali = new Set();                 // bakiyesi olmayan / anahtarı geçersiz servisler (bu açılışta)
+const secilenModel = {}, kotuModel = {}, geminiAyar = {};
+let geminiBaslik = "key";
+let calisiyor = false;
+let aktifIstek = null;                    // iptal için AbortController
+
+/* ================= Yardımcılar ================= */
+const $ = s => document.querySelector(s);
+const bekle = ms => new Promise(r => setTimeout(r, ms));
+function bildir(metin){ const b=$("#bildirim"); b.textContent=metin; b.classList.add("goster");
+  clearTimeout(bildir.t); bildir.t=setTimeout(()=>b.classList.remove("goster"),2600); }
+function aktifler(){ return ONCELIK.filter(k => ayar.anahtarlar[k]); }
+function temizle(t){ return (t||"").replace(/\*\*/g,""); }
+
+class HttpHata extends Error{ constructor(kod, mesaj){ super(`HTTP ${kod}${mesaj?" "+mesaj:""}`); this.kod=kod; this.ham=mesaj||""; } }
+function hataMetni(h){
+  if(h instanceof HttpHata){
+    const ek={401:"anahtar geçersiz",402:"bakiye yok",403:"erişim reddedildi",404:"bulunamadı",429:"limit doldu",500:"sunucu hatası",503:"servis yoğun"}[h.kod]||"";
+    return `HTTP ${h.kod} ${ek} ${h.ham.slice(0,120)}`.trim();
+  }
+  if(h && h.name==="AbortError") return "zaman aşımı";
+  if(h instanceof TypeError) return "bağlantı kurulamadı (internet ya da tarayıcı izni)";
+  return String(h && h.message || h).slice(0,160);
+}
+function kaliciMi(h){
+  if(h instanceof HttpHata && [401,402,403].includes(h.kod)) return true;
+  const m=(h&&h.message||"").toLowerCase();
+  return ["no credits","credit balance","insufficient balance","insufficient_quota","billing","payment required"].some(k=>m.includes(k));
+}
+
+/* Zaman aşımlı istek. Veri geldikçe süre yenilenir. */
+function istekHazirla(){
+  const kontrol = new AbortController();
+  let zaman = setTimeout(()=>kontrol.abort(), BEKLEME_MS);
+  return { signal: kontrol.signal, yenile(){ clearTimeout(zaman); zaman=setTimeout(()=>kontrol.abort(), BEKLEME_MS); },
+    bitir(){ clearTimeout(zaman); }, iptal(){ kontrol.abort(); } };
+}
+async function istek(url, govde, basliklar, zamanlayici){
+  const z = zamanlayici || istekHazirla();
+  try{
+    const yanit = await fetch(url, { method: govde?"POST":"GET",
+      headers: Object.assign(govde?{"Content-Type":"application/json"}:{}, basliklar||{}),
+      body: govde?JSON.stringify(govde):undefined, signal: z.signal });
+    if(!yanit.ok){
+      let mesaj=""; try{ const t=await yanit.text(); try{ const j=JSON.parse(t); const e=Array.isArray(j)?j[0]&&j[0].error:j.error; mesaj=(e&&e.message)||(typeof e==="string"?e:"")||t.slice(0,140);}catch(e){ mesaj=t.slice(0,140);} }catch(e){}
+      throw new HttpHata(yanit.status, mesaj);
+    }
+    return yanit;
+  } finally { if(!zamanlayici) z.bitir(); }
+}
+async function* sse(yanit, z){
+  const okuyucu = yanit.body.getReader(); const cozucu = new TextDecoder(); let tampon="";
+  while(true){
+    const {value, done} = await okuyucu.read(); if(done) break;
+    if(z) z.yenile();
+    tampon += cozucu.decode(value, {stream:true});
+    let i;
+    while((i=tampon.indexOf("\n"))>=0){
+      const satir=tampon.slice(0,i).trim(); tampon=tampon.slice(i+1);
+      if(!satir.startsWith("data:")) continue;
+      const veri=satir.slice(5).trim(); if(veri==="[DONE]") return;
+      try{ yield JSON.parse(veri); }catch(e){}
+    }
+  }
+}
+
+/* ================= Kimlik ================= */
+function kimlik(kod){
+  const k=ayar.anahtarlar[kod], s=SAG[kod];
+  if(s.tur==="anthropic") return {"x-api-key":k,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"};
+  if(s.tur==="gemini") return geminiBaslik==="bearer"?{"Authorization":"Bearer "+k}:{"x-goog-api-key":k};
+  const b={"Authorization":"Bearer "+k};
+  if(kod==="openrouter"){ b["X-Title"]="Cortana"; }
+  return b;
+}
+async function geminiIstek(yol, govde, z){
+  const url=SAG.gemini.url+yol;
+  try{ return await istek(url, govde, kimlik("gemini"), z); }
+  catch(h){
+    if(!(h instanceof HttpHata) || ![401,403].includes(h.kod)) throw h;
+    const eski=geminiBaslik; geminiBaslik = eski==="key"?"bearer":"key";
+    try{ return await istek(url, govde, kimlik("gemini"), z); }catch(h2){ geminiBaslik=eski; throw h2; }
+  }
+}
+
+/* ================= Model seçimi ================= */
+const listeOnbellek = {};
+async function modelListesi(kod){
+  if(listeOnbellek[kod]) return listeOnbellek[kod];
+  let liste=[];
+  if(SAG[kod].tur==="gemini"){
+    const y=await geminiIstek("/models?pageSize=1000"); const j=await y.json();
+    liste=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace("models/",""));
+  } else {
+    const y=await istek(SAG[kod].url+"/models", null, kimlik(kod)); const j=await y.json();
+    liste=(j.data||[]).map(m=>m&&m.id).filter(Boolean);
+  }
+  listeOnbellek[kod]=liste; return liste;
+}
+async function adayModeller(kod){
+  const s=SAG[kod], sirali=[];
+  try{
+    let a=(await modelListesi(kod)).filter(m=>!KOTU.some(k=>m.toLowerCase().includes(k)));
+    if(s.zorunlu) a=a.filter(m=>m.includes(s.zorunlu));
+    if(s.tur==="gemini") a=a.filter(m=>m.includes("flash"));
+    for(const t of s.tercih) for(const m of a) if(m.toLowerCase().includes(t) && !sirali.includes(m)) sirali.push(m);
+    for(const m of a) if(!sirali.includes(m)) sirali.push(m);
+  }catch(e){}
+  for(const m of s.yedek) if(!sirali.includes(m)) sirali.push(m);
+  return sirali;
+}
+async function modeliBul(kod){
+  const kotu = kotuModel[kod] || (kotuModel[kod]=new Set());
+  const elle = ayar.anahtarlar[kod+"_model"];
+  if(elle && !kotu.has(elle)) return elle;
+  if(secilenModel[kod] && !kotu.has(secilenModel[kod])) return secilenModel[kod];
+  for(const m of await adayModeller(kod)) if(!kotu.has(m)){ secilenModel[kod]=m; return m; }
+  throw new Error("kullanılabilir model bulunamadı");
+}
+
+/* ================= Konuşma ================= */
+function siraliKonusma(liste){
+  const s=[];
+  for(const m of liste){
+    const rol = m.role==="assistant"?"assistant":"user";
+    if(!s.length && rol==="assistant") continue;
+    if(s.length && s[s.length-1].role===rol) s[s.length-1].content += "\n\n"+m.content;
+    else s.push({role:rol, content:m.content});
+  }
+  return s;
+}
+function sistem(sesli){ return (ayar.kisilik||VARSAYILAN_KISILIK) + BICIM + (sesli?SESLI_KURAL:""); }
+
+async function openaiSor(kod, model, konusma, sesli, parca, z){
+  const url=SAG[kod].url+"/chat/completions";
+  const mesajlar=[{role:"system",content:sistem(sesli)}, ...konusma];
+  try{
+    const y=await istek(url, {model, messages:mesajlar, stream:true}, kimlik(kod), z);
+    for await (const j of sse(y, z)){
+      if(j.error) throw new Error(j.error.message||"servis hatası");
+      const c=(j.choices||[])[0]; if(c && c.delta && c.delta.content) parca(c.delta.content);
+    }
+    return;
+  }catch(h){ if(!(h instanceof HttpHata) || h.kod!==400) throw h; }
+  // Bazı modeller akışlı cevaba izin vermez: akışsız dene
+  const y=await istek(url, {model, messages:mesajlar}, kimlik(kod), z); const j=await y.json();
+  const c=(j.choices||[])[0]; if(c && c.message && c.message.content) parca(c.message.content);
+}
+async function anthropicSor(kod, model, konusma, sesli, parca, z){
+  const y=await istek(SAG[kod].url+"/messages", {model, max_tokens:2048, system:sistem(sesli), messages:konusma, stream:true}, kimlik(kod), z);
+  for await (const j of sse(y, z)){
+    if(j.type==="content_block_delta" && j.delta && j.delta.text) parca(j.delta.text);
+    else if(j.type==="error") throw new Error((j.error&&j.error.message)||"Claude hatası");
+  }
+}
+async function geminiSor(kod, model, konusma, sesli, parca, z, arama){
+  const icerik=konusma.map(m=>({role:m.role==="assistant"?"model":"user", parts:[{text:m.content}]}));
+  const temel={systemInstruction:{parts:[{text:sistem(sesli)}]}, contents:icerik};
+  if(arama) temel.tools=[{google_search:{}}];
+  const ayarlar=[{thinkingConfig:{thinkingBudget:0}},{thinkingConfig:{thinkingLevel:"low"}},null];
+  const sira = (model in geminiAyar)?[geminiAyar[model]]:[0,1,2];
+  let sonHata=null, geldi=false;
+  for(const i of sira){
+    const govde=Object.assign({}, temel); if(ayarlar[i]) govde.generationConfig=ayarlar[i];
+    try{
+      const y=await geminiIstek(`/models/${model}:streamGenerateContent?alt=sse`, govde, z);
+      for await (const j of sse(y, z)){
+        const aday=(j.candidates||[])[0];
+        for(const p of ((aday&&aday.content&&aday.content.parts)||[])) if(p.text && !p.thought){ geldi=true; parca(p.text); }
+      }
+      geminiAyar[model]=i; return;
+    }catch(h){ if(h instanceof HttpHata && h.kod===400 && !geldi){ sonHata=h; continue; } throw h; }
+  }
+  throw sonHata;
+}
+const SOR={openai:openaiSor, anthropic:anthropicSor, gemini:geminiSor};
+
+/* Bir servise sorar; "model yok" derse aynı serviste başka modeli dener. */
+async function birServiseSor(kod, konusma, sesli, parca, arama){
+  for(let d=0; d<4; d++){
+    const model=await modeliBul(kod);
+    let gelen="";
+    const z=istekHazirla(); aktifIstek=z;
+    try{
+      await SOR[SAG[kod].tur](kod, model, konusma, sesli, t=>{ gelen+=t; parca(t); }, z, arama);
+      return {cevap:gelen, model};
+    }catch(h){
+      if(h instanceof HttpHata && h.kod===404 && !gelen){
+        kotuModel[kod].add(model); delete secilenModel[kod];
+        olayNotu(`${SAG[kod].ad}: ${model} bulunamadı, başka model deneniyor`, "bilgi"); continue;
+      }
+      if(gelen){ olayNotu(`${SAG[kod].ad}: bağlantı yarıda koptu, cevap eksik olabilir`); return {cevap:gelen, model}; }
+      throw h;
+    }finally{ z.bitir(); }
+  }
+  throw new Error("uygun model bulunamadı");
+}
+
+/* Beyin seçimine göre sırayla dener. */
+async function beyinCevap(konusma, sesli, parca){
+  let sira, arama=ayar.internet;
+  if(ayar.beyin==="Otomatik") sira=aktifler().filter(k=>!kapali.has(k));
+  else sira=aktifler().filter(k=>SAG[k].ad===ayar.beyin);
+  if(arama){
+    if(ayar.anahtarlar.gemini) sira=["gemini", ...sira.filter(k=>k!=="gemini")];
+    else { olayNotu("İnternet araması Gemini anahtarı ister; arama olmadan cevaplanıyor.","bilgi"); arama=false; }
+  }
+  if(!sira.length){ olayNotu("Kullanılabilir bir beyin yok. Ayarlar'dan anahtar ekle."); return null; }
+  for(const kod of sira){
+    const bas=performance.now();
+    try{
+      const {cevap, model}=await birServiseSor(kod, konusma, sesli, parca, arama && kod==="gemini");
+      if(cevap.trim()) return {cevap, meta:`${SAG[kod].ad} · ${model} · ${((performance.now()-bas)/1000).toFixed(1)} sn`};
+      olayNotu(`${SAG[kod].ad}: boş cevap, sıradaki deneniyor`);
+    }catch(h){
+      if(h && h.name==="AbortError" && iptalEdildi){ return null; }
+      if(kaliciMi(h)){ kapali.add(kod); olayNotu(`${SAG[kod].ad}: ${hataMetni(h)} (bu açılışta atlanacak)`); }
+      else olayNotu(`${SAG[kod].ad}: ${hataMetni(h)}, sıradaki deneniyor`);
+    }
+  }
+  olayNotu("Hiçbir servis cevap veremedi. İnternet bağlantını ve anahtarlarını kontrol et.");
+  return null;
+}
+
+/* ================= Arayüz ================= */
+const sohbetEl=$("#sohbet");
+let aktifBalon=null;
+function bosEkran(){
+  sohbetEl.innerHTML="";
+  const d=document.createElement("div"); d.className="bos";
+  d.innerHTML='<div class="buyuk-kure"></div>';
+  const t=document.createElement("div");
+  t.textContent = aktifler().length ? "Merhaba İlahi. Yazabilir ya da sağ alttaki dalga butonuyla sesli konuşabilirsin."
+    : "Başlamak için sağ üstteki ayarlardan en az bir anahtar ekle (Groq ya da Gemini).";
+  d.appendChild(t); sohbetEl.appendChild(d);
+}
+function mesajEkle(rol, metin, meta){
+  const bos=sohbetEl.querySelector(".bos"); if(bos) bos.remove();
+  const m=document.createElement("div"); m.className="mesaj "+(rol==="user"?"sen":"cortana");
+  const b=document.createElement("div"); b.className="balon";
+  const govde=document.createElement("span"); govde.className="govde"; govde.textContent=metin||"";
+  b.appendChild(govde);
+  if(meta){ const s=document.createElement("span"); s.className="meta"; s.textContent=meta; b.appendChild(s); }
+  m.appendChild(b); sohbetEl.appendChild(m); asagiKaydir();
+  return b;
+}
+function olayNotu(metin, tur){
+  if(!aktifBalon) return;
+  const n=document.createElement("span"); n.className=tur==="bilgi"?"bilgi":"not"; n.textContent=metin;
+  aktifBalon.insertBefore(n, aktifBalon.querySelector(".govde")); asagiKaydir();
+}
+function asagiKaydir(){ sohbetEl.scrollTop=sohbetEl.scrollHeight; }
+function durumYaz(metin, dolu){ $("#durumYazi").textContent=metin; $("#miniKure").classList.toggle("calisiyor", !!dolu); }
+function gecmisiCiz(){
+  if(!gecmis.length) return bosEkran();
+  sohbetEl.innerHTML="";
+  for(const m of gecmis) mesajEkle(m.role, m.content, m.meta);
+}
+function cipleriGuncelle(){
+  $("#beyinCip").textContent=ayar.beyin;
+  $("#internetCip").classList.toggle("acik", ayar.internet);
+  $("#sesCip").classList.toggle("acik", ayar.sesliCevap);
+}
+
+/* Mesaj gönder. Cevabı (metin) döner. */
+let iptalEdildi=false;
+async function gonder(metin, sesli){
+  metin=(metin||"").trim();
+  if(!metin || calisiyor) return null;
+  calisiyor=true; iptalEdildi=false; girisGuncelle();
+  mesajEkle("user", metin);
+  gecmis.push({role:"user", content:metin});
+  aktifBalon=mesajEkle("assistant", "");
+  const govde=aktifBalon.querySelector(".govde"); govde.classList.add("yaziyor");
+  durumYaz("Düşünüyor...", true);
+  let biriken="", sonuc=null;
+  try{
+    const konusma=siraliKonusma(gecmis.slice(-MAX_GECMIS));
+    sonuc=await beyinCevap(konusma, sesli, t=>{ biriken+=t; govde.textContent=temizle(biriken); asagiKaydir(); if(sesli) sesliMetinYaz(temizle(biriken)); });
+  }catch(h){ olayNotu("Beklenmeyen hata: "+hataMetni(h)); }
+  govde.classList.remove("yaziyor");
+  let cevap=null;
+  if(sonuc){
+    cevap=temizle(sonuc.cevap); govde.textContent=cevap;
+    const s=document.createElement("span"); s.className="meta"; s.textContent=sonuc.meta; aktifBalon.appendChild(s);
+    gecmis.push({role:"assistant", content:cevap, meta:sonuc.meta});
+  } else if(!govde.textContent){ govde.textContent="Şu an cevap veremedim."; }
+  gecmis=gecmis.slice(-60); kaydet("gecmis", gecmis);
+  aktifBalon=null; calisiyor=false; durumYaz("Hazır"); girisGuncelle(); asagiKaydir();
+  return cevap;
+}
+
+/* ================= Ses: okuma ================= */
+let sesBaglami=null, calanKaynak=null, konusmaBitir=null;
+function sesBaglamiAl(){
+  if(!sesBaglami){ const C=window.AudioContext||window.webkitAudioContext; if(C) sesBaglami=new C(); }
+  if(sesBaglami && sesBaglami.state==="suspended") sesBaglami.resume().catch(()=>{});
+  return sesBaglami;
+}
+document.addEventListener("pointerdown", ()=>sesBaglamiAl(), {once:true});
+
+function sesMetni(t){
+  return (t||"").replace(/\[\d+(,\s*\d+)*\]/g,"").replace(/https?:\/\/\S+/g,"").replace(/[*#_`]/g,"")
+    .replace(/^\s*-\s+/gm,"").replace(/\s+/g," ").trim().slice(0,1800);
+}
+let ttsModeli=null;
+async function ttsModeliBul(){
+  if(ttsModeli) return ttsModeli;
+  try{
+    const liste=(await modelListesi("gemini")).filter(m=>m.includes("tts"));
+    ttsModeli = liste.find(m=>m.includes("flash")) || liste[0] || null;
+  }catch(e){}
+  if(!ttsModeli){
+    // Liste generateContent filtresinde olmayabilir: bilinen adları dene
+    ttsModeli="gemini-2.5-flash-preview-tts";
+  }
+  return ttsModeli;
+}
+async function geminiSesi(metin){
+  const model=await ttsModeliBul();
+  const hiz = {"0.9":"biraz yavaş","1":"normal","1.1":"biraz hızlı","1.25":"hızlı"}[ayar.hiz]||"normal";
+  const govde={contents:[{parts:[{text:`Doğal, sıcak ve sakin bir sesle, ${hiz} bir tempoda, gerçek bir insanın sohbet ederken konuştuğu gibi oku:\n${metin}`}]}],
+    generationConfig:{responseModalities:["AUDIO"], speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:ayar.ses}}}}};
+  const z=istekHazirla(); aktifIstek=z;
+  try{
+    const y=await geminiIstek(`/models/${model}:generateContent`, govde, z);
+    const j=await y.json();
+    const p=((((j.candidates||[])[0]||{}).content||{}).parts||[]).find(x=>x.inlineData);
+    if(!p) throw new Error("ses verisi gelmedi");
+    return {veri:p.inlineData.data, tur:p.inlineData.mimeType||"audio/L16;rate=24000"};
+  } finally { z.bitir(); }
+}
+function pcmCal(b64, tur){
+  return new Promise((coz, red)=>{
+    const ctx=sesBaglamiAl(); if(!ctx) return red(new Error("ses çalınamıyor"));
+    const oran=parseInt((/rate=(\d+)/.exec(tur)||[])[1]||"24000",10);
+    const ikili=atob(b64); const n=Math.floor(ikili.length/2);
+    const tampon=ctx.createBuffer(1, n, oran); const kanal=tampon.getChannelData(0);
+    for(let i=0;i<n;i++){ let v=ikili.charCodeAt(2*i)|(ikili.charCodeAt(2*i+1)<<8); if(v>=32768) v-=65536; kanal[i]=v/32768; }
+    const k=ctx.createBufferSource(); k.buffer=tampon; k.connect(ctx.destination);
+    let bitti=false; const bitir=()=>{ if(bitti) return; bitti=true; clearTimeout(emniyet); if(calanKaynak===k) calanKaynak=null; coz(); };
+    // Bazı telefonlarda "bitti" olayı gelmeyebilir: süre dolunca yine de devam et
+    const emniyet=setTimeout(bitir, (tampon.duration+1.5)*1000);
+    k.onended=bitir; calanKaynak=k; konusmaBitir=bitir; k.start();
+  });
+}
+function telefonSesi(metin){
+  return new Promise(coz=>{
+    if(!("speechSynthesis" in window)) return coz();
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(metin); u.lang="tr-TR"; u.rate=parseFloat(ayar.hiz)||1;
+    const sesler=speechSynthesis.getVoices().filter(v=>/tr(-|_)?TR|Turk/i.test(v.lang+" "+v.name));
+    if(sesler.length) u.voice=sesler.find(v=>/female|kadın|seda|google/i.test(v.name))||sesler[0];
+    let bitti=false; const bitir=()=>{ if(bitti) return; bitti=true; clearTimeout(emniyet); coz(); };
+    // Android'de "bitti" olayı bazen gelmez: metin uzunluğuna göre bir üst süre koy
+    const emniyet=setTimeout(bitir, 3000 + metin.length*110/(u.rate||1));
+    u.onend=bitir; u.onerror=bitir; konusmaBitir=bitir;
+    speechSynthesis.speak(u);
+  });
+}
+let sesHatasiGosterildi=false;
+async function konus(metin){
+  metin=sesMetni(metin); if(!metin) return;
+  if(ayar.ses!=="telefon" && ayar.anahtarlar.gemini){
+    try{ const s=await geminiSesi(metin); if(susturuldu) return; await pcmCal(s.veri, s.tur); return; }
+    catch(h){ if(susturuldu) return; if(!sesHatasiGosterildi){ bildir("Doğal ses şu an kullanılamıyor ("+hataMetni(h)+"), telefon sesine geçildi."); sesHatasiGosterildi=true; } }
+  }
+  if(!susturuldu) await telefonSesi(metin);
+}
+let susturuldu=false;
+function sustur(){
+  susturuldu=true;
+  try{ if(calanKaynak){ calanKaynak.stop(); calanKaynak=null; } }catch(e){}
+  try{ speechSynthesis.cancel(); }catch(e){}
+  if(konusmaBitir){ const f=konusmaBitir; konusmaBitir=null; f(); }
+}
+
+/* ================= Ses: dinleme ================= */
+const Tanima = window.SpeechRecognition || window.webkitSpeechRecognition;
+let tanima=null;
+function dinle(araSonuc){
+  return new Promise((coz, red)=>{
+    if(!Tanima) return red(new Error("Bu tarayıcı konuşma tanımayı desteklemiyor. Chrome kullan."));
+    const r=new Tanima(); tanima=r;
+    r.lang="tr-TR"; r.interimResults=true; r.continuous=false; r.maxAlternatives=1;
+    let son="";
+    r.onresult=e=>{ let t=""; for(let i=0;i<e.results.length;i++) t+=e.results[i][0].transcript; son=t; if(araSonuc) araSonuc(t); };
+    r.onerror=e=>{ tanima=null; if(e.error==="no-speech"||e.error==="aborted") coz(""); else red(new Error(
+      e.error==="not-allowed"?"Mikrofon izni verilmedi. Tarayıcı ayarlarından mikrofon iznini aç.":"Konuşma tanıma hatası: "+e.error)); };
+    r.onend=()=>{ tanima=null; coz(son.trim()); };
+    try{ r.start(); }catch(h){ red(h); }
+  });
+}
+function dinlemeyiDurdur(){ try{ if(tanima) tanima.stop(); }catch(e){} }
+
+/* Yazı kutusundaki mikrofon: söyle, yazıya çevir, gönder */
+$("#mikBtn").addEventListener("click", async ()=>{
+  if(tanima){ dinlemeyiDurdur(); return; }
+  if(calisiyor) return;
+  const b=$("#mikBtn"); b.classList.add("dinliyor"); durumYaz("Dinliyor...", true);
+  try{
+    const t=await dinle(ara=>{ $("#giris").value=ara; girisGuncelle(); });
+    b.classList.remove("dinliyor"); durumYaz("Hazır");
+    if(t){ $("#giris").value=""; girisGuncelle(); const c=await gonder(t,false); if(c && ayar.sesliCevap){ susturuldu=false; konus(c); } }
+  }catch(h){ b.classList.remove("dinliyor"); durumYaz("Hazır"); bildir(hataMetni(h)); }
+});
+
+/* ================= Sesli sohbet modu ================= */
+let sesliAcik=false, kilit=null;
+function kureDurumu(d, yazi){ const k=$("#kure"); k.className="kure "+d; $("#sesliDurum").textContent=yazi; }
+function sesliMetinYaz(t){ const el=$("#sesliMetin"); el.textContent=t.length>220?"…"+t.slice(-220):t; }
+async function sesliBaslat(){
+  if(!aktifler().length){ bildir("Önce ayarlardan bir anahtar ekle."); ayarAc(); return; }
+  if(!Tanima){ bildir("Bu tarayıcı konuşma tanımayı desteklemiyor. Chrome kullan."); return; }
+  sesBaglamiAl(); sesliAcik=true; $("#sesli").classList.add("acik");
+  try{ if(navigator.wakeLock) kilit=await navigator.wakeLock.request("screen"); }catch(e){}
+  let sessizlik=0;
+  while(sesliAcik){
+    kureDurumu("dinliyor","Dinliyorum..."); sesliMetinYaz("");
+    let metin="";
+    try{ metin=await dinle(t=>sesliMetinYaz(t)); }
+    catch(h){ bildir(hataMetni(h)); break; }
+    if(!sesliAcik) break;
+    if(!metin){ if(++sessizlik>=3){ kureDurumu("bekliyor","Seni duyamadım. Konuşmak için kürenin altındaki butona dokun."); await dokunusBekle(); sessizlik=0; } continue; }
+    sessizlik=0;
+    kureDurumu("dusunuyor","Düşünüyor...");
+    const cevap=await gonder(metin, true);
+    if(!sesliAcik) break;
+    if(cevap){ kureDurumu("konusuyor","Konuşuyor..."); susturuldu=false; await konus(cevap); }
+    else { kureDurumu("bekliyor","Cevap alınamadı."); await bekle(1200); }
+  }
+  sesliKapat();
+}
+let dokunusCoz=null;
+function dokunusBekle(){ return new Promise(c=>{ dokunusCoz=c; }); }
+$("#sesliDokun").addEventListener("click", ()=>{
+  if(dokunusCoz){ const c=dokunusCoz; dokunusCoz=null; c(); return; }
+  sustur(); dinlemeyiDurdur();           // Konuşuyorsa sözünü kes, dinliyorsa hemen gönder
+});
+function sesliKapat(){
+  sesliAcik=false; sustur(); dinlemeyiDurdur();
+  if(aktifIstek && calisiyor){ iptalEdildi=true; aktifIstek.iptal(); }
+  if(dokunusCoz){ const c=dokunusCoz; dokunusCoz=null; c(); }
+  $("#sesli").classList.remove("acik");
+  try{ if(kilit){ kilit.release(); kilit=null; } }catch(e){}
+}
+$("#sesliBitir").addEventListener("click", sesliKapat);
+$("#sesliBtn").addEventListener("click", ()=>{ if(!sesliAcik && !calisiyor) sesliBaslat(); });
+
+/* ================= Yazı kutusu ================= */
+const giris=$("#giris");
+function girisGuncelle(){
+  giris.style.height="auto"; giris.style.height=Math.min(giris.scrollHeight,120)+"px";
+  const dolu=giris.value.trim().length>0;
+  $("#gonderBtn").style.display=dolu?"grid":"none";
+  $("#sesliBtn").style.display=dolu?"none":"grid";
+  $("#gonderBtn").disabled=calisiyor;
+}
+giris.addEventListener("input", girisGuncelle);
+giris.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); $("#gonderBtn").click(); } });
+$("#gonderBtn").addEventListener("click", async ()=>{
+  const t=giris.value; if(!t.trim()||calisiyor) return;
+  giris.value=""; girisGuncelle();
+  const c=await gonder(t,false);
+  if(c && ayar.sesliCevap){ susturuldu=false; konus(c); }
+});
+
+/* ================= Çipler ================= */
+$("#internetCip").addEventListener("click", ()=>{ ayar.internet=!ayar.internet; kaydet("ayar",ayar); cipleriGuncelle();
+  bildir(ayar.internet?"İnternet araması açık (Gemini ile)":"İnternet araması kapalı"); });
+$("#sesCip").addEventListener("click", ()=>{ ayar.sesliCevap=!ayar.sesliCevap; kaydet("ayar",ayar); cipleriGuncelle();
+  if(!ayar.sesliCevap) sustur(); else sesBaglamiAl(); });
+$("#yeniCip").addEventListener("click", ()=>{ if(calisiyor) return; gecmis=[]; kaydet("gecmis",gecmis); bosEkran(); bildir("Yeni sohbet başladı"); });
+$("#beyinCip").addEventListener("click", ()=>{
+  const secenekler=["Otomatik", ...aktifler().map(k=>SAG[k].ad)];
+  const i=secenekler.indexOf(ayar.beyin); ayar.beyin=secenekler[(i+1)%secenekler.length];
+  kaydet("ayar",ayar); cipleriGuncelle(); bildir("Beyin: "+ayar.beyin);
+});
+
+/* ================= Ayarlar ================= */
+function ayarAc(){
+  const bs=$("#beyinSec"); bs.innerHTML="";
+  for(const ad of ["Otomatik", ...aktifler().map(k=>SAG[k].ad)]){ const o=new Option(ad, ad); bs.add(o); }
+  bs.value=ayar.beyin;
+  const ss=$("#sesSec"); ss.innerHTML=""; for(const [d,ad] of SESLER) ss.add(new Option(ad,d)); ss.value=ayar.ses;
+  $("#hizSec").value=ayar.hiz;
+  const alan=$("#anahtarAlanlari"); alan.innerHTML="";
+  for(const kod of ONCELIK){
+    const satir=document.createElement("div"); satir.className="alan";
+    const n=document.createElement("span"); n.className="durum-n"+(ayar.anahtarlar[kod]?" var":"");
+    const l=document.createElement("label"); l.textContent=SAG[kod].ad;
+    const g=document.createElement("input"); g.type="password"; g.autocomplete="off"; g.spellcheck=false;
+    g.placeholder= ayar.anahtarlar[kod] ? "kayıtlı (değiştirmek için yapıştır)" : "anahtar yok"; g.dataset.kod=kod;
+    satir.append(n,l,g); alan.appendChild(satir);
+  }
+  $("#kisilikAlan").value=ayar.kisilik;
+  $("#ayarlar").classList.add("acik");
+}
+function ayarlariAl(){
+  for(const g of document.querySelectorAll("#anahtarAlanlari input")){
+    const v=g.value.trim(); if(v){ ayar.anahtarlar[g.dataset.kod]=v; kapali.delete(g.dataset.kod); }
+  }
+  ayar.beyin=$("#beyinSec").value||"Otomatik"; ayar.ses=$("#sesSec").value; ayar.hiz=$("#hizSec").value;
+  ayar.kisilik=$("#kisilikAlan").value.trim()||VARSAYILAN_KISILIK;
+}
+function topluCoz(metin){
+  let sayi=0;
+  for(let satir of metin.split(/\r?\n/)){
+    satir=satir.trim(); if(!satir||satir.startsWith("#")||!satir.includes("=")) continue;
+    const i=satir.indexOf("="); let ad=satir.slice(0,i).trim().toLowerCase(); let v=satir.slice(i+1).trim().replace(/^["']|["']$/g,"").trim();
+    if(!v) continue;
+    const modelMi=ad.endsWith("_model"); let temel=modelMi?ad.slice(0,-6):ad; temel=TAKMA[temel]||temel;
+    if(!SAG[temel]) continue;
+    ayar.anahtarlar[modelMi?temel+"_model":temel]=v; if(!modelMi){ kapali.delete(temel); sayi++; }
+  }
+  return sayi;
+}
+$("#ayarBtn").addEventListener("click", ayarAc);
+$("#ayarKapat").addEventListener("click", ()=>$("#ayarlar").classList.remove("acik"));
+$("#ayarlar").addEventListener("click", e=>{ if(e.target.id==="ayarlar") $("#ayarlar").classList.remove("acik"); });
+$("#ayarKaydet").addEventListener("click", ()=>{
+  ayarlariAl(); kaydet("ayar",ayar);
+  for(const k in secilenModel) delete secilenModel[k];
+  for(const k in listeOnbellek) delete listeOnbellek[k];
+  ttsModeli=null; sesHatasiGosterildi=false;
+  if(ayar.beyin!=="Otomatik" && !aktifler().some(k=>SAG[k].ad===ayar.beyin)) ayar.beyin="Otomatik";
+  kaydet("ayar",ayar); cipleriGuncelle(); $("#ayarlar").classList.remove("acik");
+  if(!gecmis.length) bosEkran();
+  bildir("Kaydedildi · aktif beyinler: "+(aktifler().map(k=>SAG[k].ad).join(", ")||"yok"));
+});
+$("#iceAktar").addEventListener("click", ()=>{
+  const n=topluCoz($("#topluAnahtar").value); $("#topluAnahtar").value="";
+  kaydet("ayar",ayar); ayarAc(); bildir(n?`${n} anahtar eklendi`:"Tanınan anahtar bulunamadı");
+});
+$("#kisilikSifirla").addEventListener("click", ()=>{ $("#kisilikAlan").value=VARSAYILAN_KISILIK; });
+$("#sesDene").addEventListener("click", async ()=>{
+  ayarlariAl(); sesBaglamiAl(); susturuldu=false; bildir("Ses hazırlanıyor...");
+  await konus("Merhaba İlahi, ben Cortana. Sesim böyle; beğenmezsen başka bir ses seçebilirsin.");
+});
+
+/* ================= Başlangıç ================= */
+cipleriGuncelle(); gecmisiCiz(); girisGuncelle();
+// İlk cevap hızlı gelsin diye modelleri arka planda bul
+setTimeout(()=>{ for(const k of aktifler()) modeliBul(k).catch(()=>{}); }, 300);
+if("speechSynthesis" in window){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>{}; }
+</script>
+</body>
+</html>

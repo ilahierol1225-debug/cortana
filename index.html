@@ -194,6 +194,11 @@ textarea#giris:focus{border-color:var(--vurgu)}
     <textarea id="topluAnahtar" placeholder="groq = gsk_...&#10;gemini = ..."></textarea>
     <div class="btn-satir"><button class="btn" id="iceAktar">İçe aktar</button></div>
 
+    <h3>Hakkında</h3>
+    <p class="kucuk">Bu bilgiler sadece bu telefonda saklanır; dosyada ve internette yer almaz.</p>
+    <div class="alan"><label>Adın</label><input id="adAlan" autocomplete="off" placeholder="Cortana sana nasıl hitap etsin?"></div>
+    <textarea id="hakkimdaAlan" placeholder="Cortana'nın senin hakkında bilmesini istediklerin: işin, ilgi alanların, hedeflerin..."></textarea>
+
     <h3>Kişilik</h3>
     <textarea id="kisilikAlan" style="min-height:180px"></textarea>
     <div class="btn-satir"><button class="btn" id="kisilikSifirla">Varsayılana dön</button></div>
@@ -254,34 +259,28 @@ BİÇİM KURALLARI (her zaman geçerli)
 - Adın Cortana. Kendini her zaman Cortana olarak tanıt.
 - Doğal, akıcı ve konuşur gibi yaz; robot gibi değil, karşısındakiyle sohbet eden bir insan gibi.
 - Düz metin yaz. Markdown işaretleri (**, *, #, \`) ve tablo kullanma. Liste gerekiyorsa her maddeyi "- " ile başlat.
-- Türkçe konuş; İlahi başka bir dilde konuşursa ya da isterse o dilde cevap ver.`;
+- Türkçe konuş; kullanıcı başka bir dilde konuşursa ya da isterse o dilde cevap ver.`;
 
 const SESLI_KURAL = `
 
 ŞU AN SESLİ KONUŞUYORSUNUZ
 - Cevabın sesli okunacak. Gerçek bir sohbetteki gibi kısa ve doğal konuş: çoğunlukla 1-3 cümle.
 - Liste, numara, başlık, emoji, bağlantı kullanma. Rakamları konuşur gibi söyle.
-- Gerekirse kısa bir soruyla sohbeti devam ettir. İlahi detay isterse uzat.`;
+- Gerekirse kısa bir soruyla sohbeti devam ettir. Kullanıcı detay isterse uzat.`;
 
-const VARSAYILAN_KISILIK = `Sen Cortana'sın: İlahi'nin kendi kurduğu kişisel yapay zekâ asistanı.
+const VARSAYILAN_KISILIK = `Sen Cortana'sın: kullanıcının kendi kurduğu kişisel yapay zekâ asistanı.
 Adını Halo serisindeki yapay zekâdan alıyorsun.
 
 KİMLİĞİN
-- "Sen kimsin?" diye sorulursa: "Ben Cortana'yım, İlahi'nin kişisel asistanıyım." de.
-- Teknik olarak nasıl çalıştığın sorulursa dürüst ol: İlahi'nin yazdığı uygulamada çalıştığını, cevapları arka planda bir bulut dil modeliyle ürettiğini söyle. Kendini başka bir şirketin ürünü gibi tanıtma.
+- "Sen kimsin?" diye sorulursa: "Ben Cortana'yım, senin kişisel asistanınım." de.
+- Teknik olarak nasıl çalıştığın sorulursa dürüst ol: kullanıcının yazdığı uygulamada çalıştığını, cevapları arka planda bir bulut dil modeliyle ürettiğini söyle. Kendini başka bir şirketin ürünü gibi tanıtma.
 
 KİŞİLİĞİN
 - Ciddi ama sıcak ve samimisin. Zeki, sakin, kendinden emin; yeri gelince esprili.
-- Dürüstsün: İlahi yanılıyorsa bunu açıkça ve nedenleriyle söylersin. Haklıysa da nedenlerini gösterirsin.
+- Dürüstsün: kullanıcı yanılıyorsa bunu açıkça ve nedenleriyle söylersin. Haklıysa da nedenlerini gösterirsin.
 - Gereksiz övgü, yapay sıcaklık ve otomatik onay yok. Eleştirin kanıta dayalı olur, kaba olmaz.
 - Bilimsel gerçekleri, teorileri ve varsayımları birbirinden ayırırsın. Bilmediğin şeyi uydurmazsın.
-- Cevapların varsayılan olarak kısa ve net olur. İlahi detay isterse uzatırsın.
-
-İLAHİ HAKKINDA
-- Endüstriyel boru montaj ustası. Açık Öğretim'de kimya okuyor.
-- İngilizcesi A1-B1 arası; yurt dışında çalışmak ve İngilizcesini geliştirmek istiyor.
-- İlgi alanları: uzay, fizik, felsefe, Kürt tarihi ve Mezopotamya, yapay zekâ, sinema, finans.
-- Hedefleri: yapay zekâ sistemleri kuran biri olmak, sürdürülebilir yollarla ekonomik bağımsızlık, daha disiplinli olmak ve başladığı işleri bitirmek.
+- Cevapların varsayılan olarak kısa ve net olur. Kullanıcı detay isterse uzatırsın.
 
 NELERDE YARDIM EDERSİN
 - İngilizce pratiği: İstenirse İngilizce konuş, hataları nazikçe düzelt ve kısaca açıkla.
@@ -293,7 +292,7 @@ function oku(ad, varsayilan){ try{ const v=localStorage.getItem("cortana_"+ad); 
 function kaydet(ad, deger){ try{ localStorage.setItem("cortana_"+ad, JSON.stringify(deger)); }catch(e){} }
 
 const ayar = Object.assign({anahtarlar:{}, beyin:"Otomatik", ses:"Kore", hiz:"1", internet:false, sesliCevap:false,
-  kisilik:VARSAYILAN_KISILIK}, oku("ayar",{}));
+  kisilik:VARSAYILAN_KISILIK, ad:"", hakkimda:""}, oku("ayar",{}));
 let gecmis = oku("gecmis", []);          // [{role, content, meta?}]
 const kapali = new Set();                 // bakiyesi olmayan / anahtarı geçersiz servisler (bu açılışta)
 const secilenModel = {}, kotuModel = {}, geminiAyar = {};
@@ -426,7 +425,13 @@ function siraliKonusma(liste){
   }
   return s;
 }
-function sistem(sesli){ return (ayar.kisilik||VARSAYILAN_KISILIK) + BICIM + (sesli?SESLI_KURAL:""); }
+function sistem(sesli){
+  let ek="";
+  if(ayar.ad) ek+=`\n\nKULLANICININ ADI: ${ayar.ad}. Ona adıyla hitap edebilirsin.`;
+  if(ayar.hakkimda) ek+=`\n\nKULLANICI HAKKINDA\n${ayar.hakkimda}`;
+  if(!ayar.internet) ek+=`\n\nİNTERNET ARAMASI ŞU AN KAPALI\n- Soru güncel bilgi gerektiriyorsa (hava durumu, haberler, fiyatlar, kurlar, maç sonuçları, bugünün tarihiyle ilgili şeyler), uydurma. Kısaca bunu bilemeyeceğini söyle ve uygulamanın altındaki "İnternette ara" düğmesini açmasını öner. Sesli sohbetteyse önce sohbeti bitirip düğmeyi açması gerektiğini söyle.`;
+  return (ayar.kisilik||VARSAYILAN_KISILIK) + ek + BICIM + (sesli?SESLI_KURAL:"");
+}
 
 async function openaiSor(kod, model, konusma, sesli, parca, z){
   const url=SAG[kod].url+"/chat/completions";
@@ -527,7 +532,7 @@ function bosEkran(){
   const d=document.createElement("div"); d.className="bos";
   d.innerHTML='<div class="buyuk-kure"></div>';
   const t=document.createElement("div");
-  t.textContent = aktifler().length ? "Merhaba İlahi. Yazabilir ya da sağ alttaki dalga butonuyla sesli konuşabilirsin."
+  t.textContent = aktifler().length ? (ayar.ad?`Merhaba ${ayar.ad}.`:"Merhaba.")+" Yazabilir ya da sağ alttaki dalga butonuyla sesli konuşabilirsin."
     : "Başlamak için sağ üstteki ayarlardan en az bir anahtar ekle (Groq ya da Gemini).";
   d.appendChild(t); sohbetEl.appendChild(d);
 }
@@ -791,6 +796,7 @@ function ayarAc(){
     satir.append(n,l,g); alan.appendChild(satir);
   }
   $("#kisilikAlan").value=ayar.kisilik;
+  $("#adAlan").value=ayar.ad||""; $("#hakkimdaAlan").value=ayar.hakkimda||"";
   $("#ayarlar").classList.add("acik");
 }
 function ayarlariAl(){
@@ -799,6 +805,7 @@ function ayarlariAl(){
   }
   ayar.beyin=$("#beyinSec").value||"Otomatik"; ayar.ses=$("#sesSec").value; ayar.hiz=$("#hizSec").value;
   ayar.kisilik=$("#kisilikAlan").value.trim()||VARSAYILAN_KISILIK;
+  ayar.ad=$("#adAlan").value.trim(); ayar.hakkimda=$("#hakkimdaAlan").value.trim();
 }
 function topluCoz(metin){
   let sayi=0;
@@ -832,7 +839,7 @@ $("#iceAktar").addEventListener("click", ()=>{
 $("#kisilikSifirla").addEventListener("click", ()=>{ $("#kisilikAlan").value=VARSAYILAN_KISILIK; });
 $("#sesDene").addEventListener("click", async ()=>{
   ayarlariAl(); sesBaglamiAl(); susturuldu=false; bildir("Ses hazırlanıyor...");
-  await konus("Merhaba İlahi, ben Cortana. Sesim böyle; beğenmezsen başka bir ses seçebilirsin.");
+  await konus((ayar.ad?`Merhaba ${ayar.ad}, `:"Merhaba, ")+"ben Cortana. Sesim böyle; beğenmezsen başka bir ses seçebilirsin.");
 });
 
 /* ================= Başlangıç ================= */

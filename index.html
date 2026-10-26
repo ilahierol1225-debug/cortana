@@ -113,6 +113,12 @@ textarea#giris:focus{border-color:var(--vurgu)}
 .btn.ana{background:var(--vurgu);color:#04121f;border-color:var(--vurgu);font-weight:600}
 .btn-satir{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .kucuk{font-size:12.5px;color:var(--soluk)}
+#davet{position:fixed;inset:0;background:#000b;display:none;z-index:35;align-items:flex-end}
+#davet.acik{display:flex}
+.paylas-satir{display:flex;align-items:center;gap:10px;padding:8px 2px;font-size:14px}
+.paylas-satir input{width:20px;height:20px;accent-color:var(--vurgu)}
+.paylas-satir .etiket{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--kutu);border:1px solid var(--kenar);color:var(--soluk)}
+.paylas-satir .etiket.ucretli{color:var(--sari);border-color:#5a4a1d}
 #bildirim{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#1d2c50;padding:10px 16px;
   border-radius:12px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:40;max-width:90vw}
 #bildirim.goster{opacity:1}
@@ -194,6 +200,12 @@ textarea#giris:focus{border-color:var(--vurgu)}
     <textarea id="topluAnahtar" placeholder="groq = gsk_...&#10;gemini = ..."></textarea>
     <div class="btn-satir"><button class="btn" id="iceAktar">İçe aktar</button></div>
 
+    <h3>Paylaş</h3>
+    <p class="kucuk">Seçtiğin anahtarları içeren özel bir link oluşturur. Linki açan kişi anahtar girmeden Cortana'yı kullanır. Anahtarlar GitHub'a ya da herhangi bir sunucuya gitmez; sadece link içinde taşınır. Linki sadece güvendiğin kişilere gönder; onlar başkasına iletirse o kişiler de senin anahtarlarını kullanabilir. Adın, "Hakkında" bilgilerin ve sohbetlerin linke eklenmez.</p>
+    <div id="paylasListe"></div>
+    <div class="btn-satir"><button class="btn ana" id="paylasBtn">🔗 Paylaşım linki oluştur</button></div>
+    <div class="alan" id="paylasSonuc" style="display:none"><input id="paylasLink" readonly></div>
+
     <h3>Hakkında</h3>
     <p class="kucuk">Bu bilgiler sadece bu telefonda saklanır; dosyada ve internette yer almaz.</p>
     <div class="alan"><label>Adın</label><input id="adAlan" autocomplete="off" placeholder="Cortana sana nasıl hitap etsin?"></div>
@@ -206,6 +218,18 @@ textarea#giris:focus{border-color:var(--vurgu)}
     <div class="btn-satir" style="margin-top:22px">
       <button class="btn ana" id="ayarKaydet">Kaydet</button>
       <button class="btn" id="ayarKapat">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<div id="davet">
+  <div class="sayfa" style="border-radius:22px 22px 0 0">
+    <h2>Cortana'ya hoş geldin</h2>
+    <p id="davetYazi"></p>
+    <p class="kucuk">Bu anahtarlar sadece bu telefonda saklanır. İstediğin zaman Ayarlar'dan değiştirebilir ya da silebilirsin.</p>
+    <div class="btn-satir">
+      <button class="btn ana" id="davetEkle">Anahtarları ekle</button>
+      <button class="btn" id="davetReddet">Vazgeç</button>
     </div>
   </div>
 </div>
@@ -797,6 +821,7 @@ function ayarAc(){
   }
   $("#kisilikAlan").value=ayar.kisilik;
   $("#adAlan").value=ayar.ad||""; $("#hakkimdaAlan").value=ayar.hakkimda||"";
+  paylasListesiCiz();
   $("#ayarlar").classList.add("acik");
 }
 function ayarlariAl(){
@@ -842,7 +867,93 @@ $("#sesDene").addEventListener("click", async ()=>{
   await konus((ayar.ad?`Merhaba ${ayar.ad}, `:"Merhaba, ")+"ben Cortana. Sesim böyle; beğenmezsen başka bir ses seçebilirsin.");
 });
 
+/* ================= Anahtarlı paylaşım linki ================= */
+const UCRETLI = new Set(["deepseek","openai","xai","anthropic"]);
+function b64Kodla(metin){
+  const baytlar=new TextEncoder().encode(metin); let s="";
+  for(const b of baytlar) s+=String.fromCharCode(b);
+  return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function b64Coz(metin){
+  let s=metin.replace(/-/g,"+").replace(/_/g,"/"); while(s.length%4) s+="=";
+  const ikili=atob(s); const baytlar=new Uint8Array(ikili.length);
+  for(let i=0;i<ikili.length;i++) baytlar[i]=ikili.charCodeAt(i);
+  return new TextDecoder().decode(baytlar);
+}
+function paylasListesiCiz(){
+  const liste=$("#paylasListe"); liste.innerHTML="";
+  const varolan=aktifler();
+  if(!varolan.length){ const p=document.createElement("p"); p.className="kucuk"; p.textContent="Paylaşılacak anahtar yok."; liste.appendChild(p); return; }
+  for(const kod of varolan){
+    const satir=document.createElement("label"); satir.className="paylas-satir";
+    const kutu=document.createElement("input"); kutu.type="checkbox"; kutu.dataset.kod=kod; kutu.checked=!UCRETLI.has(kod);
+    const ad=document.createElement("span"); ad.textContent=SAG[kod].ad; ad.style.flex="1";
+    const et=document.createElement("span"); et.className="etiket"+(UCRETLI.has(kod)?" ucretli":"");
+    et.textContent=UCRETLI.has(kod)?"ücretli":"ücretsiz";
+    satir.append(kutu, ad, et); liste.appendChild(satir);
+  }
+  $("#paylasSonuc").style.display="none";
+}
+function paylasLinkiOlustur(){
+  const secilen={};
+  for(const kutu of $("#paylasListe").querySelectorAll("input")){
+    if(!kutu.checked) continue;
+    const kod=kutu.dataset.kod;
+    if(ayar.anahtarlar[kod]) secilen[kod]=ayar.anahtarlar[kod];
+    if(ayar.anahtarlar[kod+"_model"]) secilen[kod+"_model"]=ayar.anahtarlar[kod+"_model"];
+  }
+  if(!Object.keys(secilen).length) return null;
+  return location.origin+location.pathname+"#k="+b64Kodla(JSON.stringify({v:1,a:secilen}));
+}
+$("#paylasBtn").addEventListener("click", async ()=>{
+  const link=paylasLinkiOlustur();
+  if(!link){ bildir("Önce en az bir anahtar seç."); return; }
+  $("#paylasLink").value=link; $("#paylasSonuc").style.display="flex";
+  try{
+    if(navigator.share){ await navigator.share({title:"Cortana", text:"Cortana'yı dene:", url:link}); return; }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  try{ await navigator.clipboard.writeText(link); bildir("Link kopyalandı. Sadece güvendiğin kişilere gönder."); }
+  catch(e){ $("#paylasLink").select(); bildir("Linki kutudan kopyalayabilirsin."); }
+});
+
+let gelenAnahtarlar=null;
+function davetiKontrolEt(){
+  const m=/[#&]k=([A-Za-z0-9_-]+)/.exec(location.hash||"");
+  // Anahtarlar adres çubuğunda, geçmişte ya da ana ekran kısayolunda kalmasın
+  if(location.hash) try{ history.replaceState(null, "", location.pathname+location.search); }catch(e){}
+  if(!m) return;
+  try{
+    const veri=JSON.parse(b64Coz(m[1]));
+    const temiz={};
+    for(const [ad,deger] of Object.entries((veri&&veri.a)||{})){
+      const temel=ad.endsWith("_model")?ad.slice(0,-6):ad;
+      if(SAG[temel] && typeof deger==="string" && deger.trim() && deger.length<400) temiz[ad]=deger.trim();
+    }
+    const servisler=Object.keys(temiz).filter(a=>!a.endsWith("_model"));
+    if(!servisler.length) return;
+    gelenAnahtarlar=temiz;
+    $("#davetYazi").textContent="Bu link şu servislerin anahtarlarını içeriyor: "+servisler.map(k=>SAG[k].ad).join(", ")+
+      ". Eklersen Cortana'yı hemen kullanmaya başlayabilirsin.";
+    $("#davet").classList.add("acik");
+  }catch(e){ bildir("Paylaşım linki okunamadı."); }
+}
+$("#davetEkle").addEventListener("click", ()=>{
+  if(gelenAnahtarlar){
+    Object.assign(ayar.anahtarlar, gelenAnahtarlar);
+    for(const k of Object.keys(gelenAnahtarlar)) kapali.delete(k);
+    for(const k in secilenModel) delete secilenModel[k];
+    for(const k in listeOnbellek) delete listeOnbellek[k];
+    kaydet("ayar",ayar); gelenAnahtarlar=null;
+    cipleriGuncelle(); if(!gecmis.length) bosEkran();
+    setTimeout(()=>{ for(const k of aktifler()) modeliBul(k).catch(()=>{}); }, 100);
+    bildir("Anahtarlar eklendi · aktif beyinler: "+aktifler().map(k=>SAG[k].ad).join(", "));
+  }
+  $("#davet").classList.remove("acik");
+});
+$("#davetReddet").addEventListener("click", ()=>{ gelenAnahtarlar=null; $("#davet").classList.remove("acik"); });
+
 /* ================= Başlangıç ================= */
+davetiKontrolEt();
 cipleriGuncelle(); gecmisiCiz(); girisGuncelle();
 // İlk cevap hızlı gelsin diye modelleri arka planda bul
 setTimeout(()=>{ for(const k of aktifler()) modeliBul(k).catch(()=>{}); }, 300);
